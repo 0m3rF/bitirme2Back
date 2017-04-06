@@ -1,0 +1,32 @@
+{
+  "name": "bitirmeprojesi2datamining",
+  "version": "0.0.1",
+  "description": "backend service for final project 2",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0m3rF/databitirmeprojesi"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "mongodb",
+    "rest"
+  ],
+  "author": "0m3rF",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/0m3rF/databitirmeprojesi/issues"
+  },
+  "homepage": "https://github.com/0m3rF/databitirmeprojesi#readme",
+  "dependencies": {
+    "assert": "^1.4.1",
+    "body-parser": "^1.17.1",
+    "cors": "^2.8.3",
+    "express": "^4.15.2",
+    "mongodb": "^2.2.25"
+  }
+}
