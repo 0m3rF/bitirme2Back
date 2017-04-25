@@ -3,8 +3,10 @@ var cors 		= require('cors'); // HTTP access control (CORS)
 var bodyParser 	= require('body-parser'); // For json objects with post
 var app 		= express();  // Initialize express
 var port 		= process.env.PORT || 3000 ; // whatever is in the environment variable PORT, or 3000 if there's nothing there.
+var api_db 		= require("./routes/api_db"); // db route which we generated.
+var cors 		= require("cors");
 
-var api_db = require("./routes/api_db"); // db route which we generated.
+app.use(cors());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false })); //  exposes it on req.body as something easier to interface with 
@@ -14,6 +16,7 @@ app.use(function(req, res, next) { // This method controls accept a request or n
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
     next();
 });
+
 app.use('/api/db',api_db); // If some request comes to xyz.com/api/db this will route that req to api_db file
 
 
