@@ -124,7 +124,7 @@ Kullanıcının girdiği metne göre arama yapma
 
 ```sh
 Backend 
-send to mining  /searchSong&q=sarki_adi
+send to mining  /searchSong?q=sarki_adi
 
 Mining 
 response 
