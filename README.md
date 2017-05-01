@@ -118,3 +118,28 @@ response
 ```
 
 
+# 7-) Şarkı arama
+
+Kullanıcının girdiği metne göre arama yapma
+
+```sh
+Backend 
+send to mining  /searchSong&q=sarki_adi
+
+Mining 
+response 
+[
+    {
+        sarkiId : int, 
+        sarkiismi : string,
+        sanatciIsmi : string,
+        genreId : int 
+    },
+    {
+        sarkiId : int, 
+        sarkiismi : string,
+        sanatciIsmi : string,
+        genreId : int 
+    },
+]
+```
