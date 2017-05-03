@@ -143,3 +143,15 @@ response
     },
 ]
 ```
+
+# 8-) Mining Süresini Azaltmak için
+
+```
+sh
+Backend 
+send to mining  /logineduser?userid=0 
+
+Mining tarafı cevap atmayacak.
+
+```
+
