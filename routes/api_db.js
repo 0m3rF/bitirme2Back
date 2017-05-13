@@ -1,12 +1,14 @@
 var express 	= require('express'),
 	router 		= express.Router(),
 	MongoClient	= require('mongodb').MongoClient,
+	mongo 		= require('mongodb'),
 	assert 		= require('assert'),
 	jwt			= require("jsonwebtoken"),
 	userModel 	= require("../models/user.js")
 	config 		= require('../models/config.js'),
-	mongoString = config.url
-	clcString 	= config.userCollection;
+	mongoString = config.url,
+	userString 	= config.userCollection,
+	histString 	= config.historyCollection;
 
 const secret = "bubirgizlianahtardıroldukcauzunolmasıbizimicinonemlidirsonradegistiririz";
 
@@ -28,7 +30,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 		var body = req.body;
 		console.log("\x1b[36mLogin isteği = " + JSON.stringify(req.body) + "\x1b[0m");
-		db.collection(clcString).find({username:body.username,password:body.password})
+		db.collection(userString).find({username:body.username,password:body.password})
 		.toArray((err,docs)=>{
 
 			if(err || docs.length <= 0)
@@ -81,7 +83,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 
 
-		db.collection(clcString).insertOne(userModel,(err,result)=>{
+		db.collection(userString).insertOne(userModel,(err,result)=>{
 			assert.equal(err,null);
 
 			console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
@@ -98,20 +100,19 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 	var authControlMiddleware = (req,res,next)=>{ // token kontrolü için
 		var token = req.body.token || req.headers['token'];
-
 		if(token)
 		{
 			jwt.verify(token,secret,(err,decode)=>{
 				if(err){
-					console.log("auth Control! failed!" + token);
+					console.log("auth Control! failed!" );
 					res.send({"AUTH" : "fail"});
 				}else{
-					console.log("Auth control passed! \n Token = " + token)
+					console.log("Auth control passed! \n Token = " )
 					next();
 				}
 			})
 		} else {
-			console.log("auth Control! failed!" + token);
+			console.log("auth Control! failed!" );
 			res.send( {"AUTH" : "fail"} );
 		}
 
@@ -122,14 +123,15 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var body = req.body;
 		console.log("welcome ! gelen cevap = " + JSON.stringify(body));
 
-		db.collection(clcString).updateOne({ username : body.username }, 
+		db.collection(userString).updateOne({ username : body.username }, 
 		{ 
 		$set: { 
 				age : body.age ,
 				country : body.country,
 				firstTime : false,
-				favSongId : body.favSongs,
-				favGenreId : body.favGenres
+				favSongId : body.favSongId,
+				favGenreId : body.favGenreId,
+				historySongId : body.historySongId
 			} 
 		},
 		(err, result) => {
@@ -149,6 +151,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var obj =[];
 		obj.push(songs[0]);
 		obj.push(songs[1]);
+		obj.push(songs[2]);
 
 		if(!search)
 		{
@@ -168,6 +171,171 @@ MongoClient.connect(mongoString,(err,db)=>{
 			console.log("Songs =  "   + JSON.stringify(obj) );
 			res.send(JSON.stringify(obj));
 		}
+	});
+
+	router.post('/saveChanges',authControlMiddleware,(req,res)=>{
+		var body = req.body;
+
+		if(body.password != "")
+		{
+			console.log("password var!");
+		
+		db.collection(userString).updateOne({ _id : new mongo.ObjectID(body.id)}, 
+		{ 
+		$set: { 
+				password : body.password,
+				age : body.age ,
+				country : body.country,
+				email : body.email,
+			} 
+		},
+		(err, result) => {
+			if(err)
+			{
+				console.log("Gelen body = " + JSON.stringify(req.body));
+				res.send({'SAVE':'FAIL'});
+			}
+			else
+			{
+		    	res.send({"SAVE":"SUCCESS"});
+		    	console.log("kayıt başarlılı = " + JSON.stringify(result));
+			}
+	    });
+		}
+
+		else
+		{
+			console.log("password yok!");
+
+		db.collection(userString).updateOne({ _id : new mongo.ObjectID(body.id)}, 
+		{ 
+		$set: { 
+				age : body.age ,
+				country : body.country,
+				email : body.email,
+			} 
+		},
+		(err, result) => {
+			if(err)
+			{
+				console.log("Gelen body = " + JSON.stringify(req.body));
+				res.send({'SAVE':'FAIL'});
+			}
+			else
+			{
+		    	res.send({"SAVE":"SUCCESS"});
+		    	console.log("kayıt başarlılı = " + JSON.stringify(result));
+			}
+	    }); 
+
+		}
+
+		console.log("Gelen body = " + JSON.stringify(req.body));
+	});
+
+	router.post('/deleteAccount',authControlMiddleware,(req,res)=>{
+		var body = req.body;
+
+		console.log("gelen silme isteği body = " + JSON.stringify(body));
+		db.collection(userString).deleteOne({_id:mongo.ObjectID(body.id)},(err,result)=>{
+			res.send({"DELETE":"SUCCESS"});
+
+			//console.log(result);
+		});
+	});
+
+	router.post('/addSongHistory',authControlMiddleware,(req,res)=>{
+		var body = req.body;
+
+		console.log("gelen hisotry isteği body = " + JSON.stringify(body));
+		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId}, $inc:{ count : 1, time : 0 } },{upsert:true},(err,result)=>{
+			res.send({"UPSERT":"SUCCESS"});
+
+			//console.log(result);
+		});
+	});
+
+	router.post('/addTimeToSongHistory',authControlMiddleware,(req,res)=>{
+		var body = req.body;
+
+		console.log("gelen hisotry isteği body = " + JSON.stringify(body));
+		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId},$inc:{count: 0 ,time : 10 } },{upsert:true},(err,result)=>{
+			res.send({"UPSERT":"SUCCESS"});
+
+			//console.log(result);
+		});
+	});
+
+	router.post('/minusTimeToSongHistory',authControlMiddleware,(req,res)=>{
+		var body = req.body;
+
+		console.log("gelen hisotry isteği body = " + JSON.stringify(body));
+		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId},$inc:{count: 0, time : -10 } },{upsert:true},(err,result)=>{
+			res.send({"UPSERT":"SUCCESS"});
+
+			//console.log(result);
+		});
+	});
+
+	router.post('/playlistRecommendation',authControlMiddleware,(req,res)=>{
+		var body = req.body;
+
+		console.log("gelen playlist isteği body = " + JSON.stringify(body));
+		var obj = [];
+		var rand = 0;
+		switch(req.body.type)
+		{
+			case 0: // en popüler x şarkı 
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			break;
+
+			case 1: // kişiye özel öneri
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			break;
+
+			case 2:  // her türe göre özel öneri ( her türün en sevileni gibi...)
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			break;
+
+			case 3: // ülkeye göre özel öneri
+			rand = Math.floor(Math.random()*7);
+			console.log("rand = " + rand);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+			console.log("rand = " + rand);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+			console.log("rand = " + rand);
+				obj.push(songs[rand]);
+			break;
+
+			case 4: // yaş gruplarına göre özel öneri
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			rand = Math.floor(Math.random()*7);
+				obj.push(songs[rand]);
+			break;
+		}
+
+		console.log("göndirelecek mzükler = " + JSON.stringify(obj));
+		res.send(JSON.stringify(obj));
 
 
 	});

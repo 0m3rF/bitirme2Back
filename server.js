@@ -19,14 +19,17 @@ app.use(function(req, res, next) { // This method controls accept a request or n
 
 app.use('/api/db',api_db); // If some request comes to xyz.com/api/db this will route that req to api_db file
 
+app.get('/',(req,res)=>{
+	res.send("Nothing to see here, move on...");
+});
 
 app.get('/api',(req,res)=>{ // this will handle coming get request to xyz.com/api
 	res.send("Welcome to API with get!"); // send response.
-})
+});
 
 app.post('/api',(req,res)=>{ // this will handle coming post request to xyz.com/api
 	res.send("Welcome to API with post!");
-})
+});
 
 
 
