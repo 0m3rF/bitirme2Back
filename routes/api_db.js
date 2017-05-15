@@ -9,8 +9,12 @@ var express 	= require('express'),
 	mongoString = config.url,
 	userString 	= config.userCollection,
 	histString 	= config.historyCollection;
-
 const secret = "bubirgizlianahtardıroldukcauzunolmasıbizimicinonemlidirsonradegistiririz";
+
+var request = require('request'),
+    jsdom = require('jsdom');
+
+const { JSDOM } = jsdom;
 
 
 MongoClient.connect(mongoString,(err,db)=>{
@@ -346,6 +350,23 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 		console.log("göndirelecek mzükler = " + JSON.stringify(obj));
 		res.send(JSON.stringify(obj));
+
+
+	});
+
+
+	router.post('/playYoutubeSong',authControlMiddleware,(req,res)=>{
+		var body = req.body;
+
+		JSDOM.fromURL("https://www.youtube.com/results?search_query="+body.search, {}).then(dom => {
+  
+ 			console.log("arama isteği = " + body.search);
+ 			var searchid = dom.window.document.querySelector(".yt-lockup.yt-lockup-tile.yt-lockup-video.clearfix").getAttribute("data-context-item-id");
+
+  			res.send({"id":searchid});
+		  console.log("giden id = " + searchid );
+		});
+
 
 
 	});
