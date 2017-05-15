@@ -77,6 +77,16 @@ MongoClient.connect(mongoString,(err,db)=>{
 			return;
 		}
 
+
+		var userChecker = db.collection(userString).findOne({$or :[ {username : body.username} , { email : body.email} ] })
+
+		if(userChecker)
+		{
+			res.send({"register":"fail"});
+			return;
+		}
+
+
 		userModel.username = body.username;
 		userModel.password = body.password;
 		userModel.email = body.email;
