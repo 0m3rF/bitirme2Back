@@ -61,7 +61,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 					token:token
 				}
 
-				console.log("Gönderilen cevap = " + JSON.stringify(info));
 				res.json(info);
 
 			}
@@ -121,7 +120,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 					console.log("auth Control! failed!" );
 					res.send({"AUTH" : "fail"});
 				}else{
-					console.log("Auth control passed! \n Token = " )
 					next();
 				}
 			})
@@ -135,7 +133,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 	router.post('/saveUserInfo',authControlMiddleware ,(req,res)=>{
 		var body = req.body;
-		console.log("welcome ! gelen cevap = " + JSON.stringify(body));
 
 		db.collection(userString).updateOne({ username : body.username }, 
 		{ 
@@ -154,7 +151,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 			else
 			{
 		    	res.send({"SAVE":"success"});
-		    	console.log("kayıt başarlılı = " + JSON.stringify(result));
 			}
 	    });  
 	});
@@ -169,7 +165,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 		if(!search)
 		{
-			console.log(" ilk iki şarkı =  "+ JSON.stringify(obj));
 			res.send(JSON.stringify(obj));
 		}
 		else
@@ -182,7 +177,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 				if(songs[i].sarkiismi.toUpperCase().includes(search.toUpperCase()))
 					obj.push(songs[i]);
 			}
-			console.log("Songs =  "   + JSON.stringify(obj) );
 			res.send(JSON.stringify(obj));
 		}
 	});
@@ -192,7 +186,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 		if(body.password != "")
 		{
-			console.log("password var!");
 		
 		db.collection(userString).updateOne({ _id : new mongo.ObjectID(body.id)}, 
 		{ 
@@ -206,20 +199,17 @@ MongoClient.connect(mongoString,(err,db)=>{
 		(err, result) => {
 			if(err)
 			{
-				console.log("Gelen body = " + JSON.stringify(req.body));
 				res.send({'SAVE':'FAIL'});
 			}
 			else
 			{
 		    	res.send({"SAVE":"SUCCESS"});
-		    	console.log("kayıt başarlılı = " + JSON.stringify(result));
 			}
 	    });
 		}
 
 		else
 		{
-			console.log("password yok!");
 
 		db.collection(userString).updateOne({ _id : new mongo.ObjectID(body.id)}, 
 		{ 
@@ -232,25 +222,20 @@ MongoClient.connect(mongoString,(err,db)=>{
 		(err, result) => {
 			if(err)
 			{
-				console.log("Gelen body = " + JSON.stringify(req.body));
 				res.send({'SAVE':'FAIL'});
 			}
 			else
 			{
 		    	res.send({"SAVE":"SUCCESS"});
-		    	console.log("kayıt başarlılı = " + JSON.stringify(result));
 			}
 	    }); 
 
 		}
 
-		console.log("Gelen body = " + JSON.stringify(req.body));
 	});
 
 	router.post('/deleteAccount',authControlMiddleware,(req,res)=>{
 		var body = req.body;
-
-		console.log("gelen silme isteği body = " + JSON.stringify(body));
 		db.collection(userString).deleteOne({_id:mongo.ObjectID(body.id)},(err,result)=>{
 			res.send({"DELETE":"SUCCESS"});
 
@@ -261,7 +246,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 	router.post('/addSongHistory',authControlMiddleware,(req,res)=>{
 		var body = req.body;
 
-		console.log("gelen hisotry isteği body = " + JSON.stringify(body));
+		console.log(" history count  body = " + JSON.stringify(body));
 		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId}, $inc:{ count : 1, time : 0 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
@@ -272,7 +257,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 	router.post('/addTimeToSongHistory',authControlMiddleware,(req,res)=>{
 		var body = req.body;
 
-		console.log("gelen hisotry isteği body = " + JSON.stringify(body));
+		console.log(" history time  body = " + JSON.stringify(body));
 		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId},$inc:{count: 0 ,time : 10 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
@@ -283,7 +268,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 	router.post('/minusTimeToSongHistory',authControlMiddleware,(req,res)=>{
 		var body = req.body;
 
-		console.log("gelen hisotry isteği body = " + JSON.stringify(body));
+		console.log(" hisotry -time body = " + JSON.stringify(body));
 		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId},$inc:{count: 0, time : -10 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
@@ -294,7 +279,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 	router.post('/playlistRecommendation',authControlMiddleware,(req,res)=>{
 		var body = req.body;
 
-		console.log("gelen playlist isteği body = " + JSON.stringify(body));
 		var obj = [];
 		var rand = 0;
 		switch(req.body.type)
@@ -328,13 +312,10 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 			case 3: // ülkeye göre özel öneri
 			rand = Math.floor(Math.random()*7);
-			console.log("rand = " + rand);
 				obj.push(songs[rand]);
 			rand = Math.floor(Math.random()*7);
-			console.log("rand = " + rand);
 				obj.push(songs[rand]);
 			rand = Math.floor(Math.random()*7);
-			console.log("rand = " + rand);
 				obj.push(songs[rand]);
 			break;
 
@@ -359,12 +340,10 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var body = req.body;
 
 		JSDOM.fromURL("https://www.youtube.com/results?search_query="+body.search, {}).then(dom => {
-  
- 			console.log("arama isteği = " + body.search);
+ 
  			var searchid = dom.window.document.querySelector(".yt-lockup.yt-lockup-tile.yt-lockup-video.clearfix").getAttribute("data-context-item-id");
-
   			res.send({"id":searchid});
-		  console.log("giden id = " + searchid );
+
 		});
 
 
