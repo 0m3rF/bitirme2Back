@@ -89,7 +89,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 		if(userChecker)
 		{
-			console.log(" *** Veritabanı Hatası  ***");
+			console.log(" *** Veritabanı Hatası  ***" + JSON.stringify(userChecker));
 			res.send({"register":"fail"});
 			return;
 		}
