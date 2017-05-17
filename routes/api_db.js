@@ -74,6 +74,9 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 		var body = req.body;
 
+
+		console.log("\x1b[36mRegister isteği = " + JSON.stringify(req.body) + "\x1b[0m");
+		
 		if(body.username == "" || body.password == "" || body.email == "")
 		{
 			res.send({"register":"fail"})
@@ -88,6 +91,8 @@ MongoClient.connect(mongoString,(err,db)=>{
 			res.send({"register":"fail"});
 			return;
 		}
+
+
 
 
 		userModel.username = body.username;
