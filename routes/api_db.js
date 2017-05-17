@@ -61,6 +61,8 @@ MongoClient.connect(mongoString,(err,db)=>{
 					token:token
 				}
 
+				console.log("\n\n" + JSON.stringify(docs) + "\n\n");
+
 				res.json(info);
 
 			}
@@ -70,50 +72,50 @@ MongoClient.connect(mongoString,(err,db)=>{
 	});
   		 
 
-	router.post('/registerUser',(req,res)=>{
+router.post('/registerUser',(req,res)=>{
 
-		var body = req.body;
+	var body = req.body;
+
+	console.log("\x1b[36mRegister isteği = " + JSON.stringify(req.body) + "\x1b[0m");
+	
+	if(body.username == "" || body.password == "" || body.email == "")
+	{
+		console.log(" *** Hatalı Kullanıcı Bilgileri ***");
+		res.send({"register":"fail"})
+		return;
+	}
 
 
-		console.log("\x1b[36mRegister isteği = " + JSON.stringify(req.body) + "\x1b[0m");
-		
-		if(body.username == "" || body.password == "" || body.email == "")
-		{
-			console.log(" *** Hatalı Kullanıcı Bilgileri ***");
-			res.send({"register":"fail"})
-			return;
+	db.collection(userString).findOne( {$or :[ {username : body.username} , { email : body.email} ] }, function (err,result) {
+	    if (err) {  
+	    	console.log("*** VERİTABANI HATASI **** = " + JSON.stringify(err));
+	    	res.send({"register":"fail"}); }
+
+	    if (result) {
+	        res.send({"register":"fail"});
+	    } else {
+
+			userModel.username = body.username;
+			userModel.password = body.password;
+			userModel.email = body.email;
+
+
+
+			db.collection(userString).insertOne(userModel,(err,result)=>{
+				assert.equal(err,null);
+
+				console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
+
+				// result callback function eğer istenirse bir başka fonksyion çağıralabilir.
+
+			});
+
+			res.send({"register":"success"});
 		}
-
-
-		var userChecker = db.collection(userString).findOne({$or :[ {username : body.username} , { email : body.email} ] })
-
-		if(userChecker)
-		{
-			console.log(" *** Veritabanı Hatası  ***" + JSON.stringify(userChecker));
-			res.send({"register":"fail"});
-			return;
-		}
-
-
-
-
-		userModel.username = body.username;
-		userModel.password = body.password;
-		userModel.email = body.email;
-
-
-
-		db.collection(userString).insertOne(userModel,(err,result)=>{
-			assert.equal(err,null);
-
-			console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
-
-			// result callback function eğer istenirse bir başka fonksyion çağıralabilir.
-
-		});
-
-		res.send({"register":"success"});
 	});
+						
+
+});
 
 
 //************************* Yetkilendirme Gereken işlemler! ******************************* //
