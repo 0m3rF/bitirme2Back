@@ -79,6 +79,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 		
 		if(body.username == "" || body.password == "" || body.email == "")
 		{
+			console.log(" *** Hatalı Kullanıcı Bilgileri ***");
 			res.send({"register":"fail"})
 			return;
 		}
@@ -88,6 +89,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 		if(userChecker)
 		{
+			console.log(" *** Veritabanı Hatası  ***");
 			res.send({"register":"fail"});
 			return;
 		}
