@@ -22,6 +22,8 @@ MongoClient.connect(mongoString,(err,db)=>{
 	assert.equal(null,err);
 	console.log("Veritabanı bağlantısı başarılı!");
 
+	
+
 
 	router.get("/", (req,res) => {
 
@@ -31,7 +33,6 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 
 	router.post("/loginUser",(req,res)=>{
-
 		var body = req.body;
 		console.log("\x1b[36mLogin isteği = " + JSON.stringify(req.body) + "\x1b[0m");
 		db.collection(userString).find({username:body.username,password:body.password})
@@ -60,15 +61,10 @@ MongoClient.connect(mongoString,(err,db)=>{
 					LOGIN:"success",
 					token:token
 				}
-
 				console.log("\n\n" + JSON.stringify(docs) + "\n\n");
-
 				res.json(info);
-
-			}
-			
+			}	
 		});
-
 	});
   		 
 
@@ -84,8 +80,6 @@ router.post('/registerUser',(req,res)=>{
 		res.send({"register":"fail"})
 		return;
 	}
-
-
 	db.collection(userString).findOne( {$or :[ {username : body.username} , { email : body.email} ] }, function (err,result) {
 	    if (err) {  
 	    	console.log("*** VERİTABANI HATASI **** = " + JSON.stringify(err));
@@ -99,22 +93,13 @@ router.post('/registerUser',(req,res)=>{
 			userModel.password = body.password;
 			userModel.email = body.email;
 
-
-
 			db.collection(userString).insertOne(userModel,(err,result)=>{
 				assert.equal(err,null);
-
 				console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
-
-				// result callback function eğer istenirse bir başka fonksyion çağıralabilir.
-
 			});
-
 			res.send({"register":"success"});
 		}
 	});
-						
-
 });
 
 
