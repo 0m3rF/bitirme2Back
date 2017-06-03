@@ -8,7 +8,9 @@ var express 	= require('express'),
 	config 		= require('../models/config.js'),
 	mongoString = config.url,
 	userString 	= config.userCollection,
-	histString 	= config.historyCollection;
+	histString 	= config.historyCollection,
+	songsString = config.songsCollection,
+	recommendString = config.recommendCollection;
 const secret = "bubirgizlianahtardıroldukcauzunolmasıbizimicinonemlidirsonradegistiririz";
 
 var request = require('request'),
@@ -68,39 +70,39 @@ MongoClient.connect(mongoString,(err,db)=>{
 	});
   		 
 
-router.post('/registerUser',(req,res)=>{
+	router.post('/registerUser',(req,res)=>{
 
-	var body = req.body;
+		var body = req.body;
 
-	console.log("\x1b[36mRegister isteği = " + JSON.stringify(req.body) + "\x1b[0m");
-	
-	if(body.username == "" || body.password == "" || body.email == "")
-	{
-		console.log(" *** Hatalı Kullanıcı Bilgileri ***");
-		res.send({"register":"fail"})
-		return;
-	}
-	db.collection(userString).findOne( {$or :[ {username : body.username} , { email : body.email} ] }, function (err,result) {
-	    if (err) {  
-	    	console.log("*** VERİTABANI HATASI **** = " + JSON.stringify(err));
-	    	res.send({"register":"fail"}); }
-
-	    if (result) {
-	        res.send({"register":"fail"});
-	    } else {
-
-			userModel.username = body.username;
-			userModel.password = body.password;
-			userModel.email = body.email;
-
-			db.collection(userString).insertOne(userModel,(err,result)=>{
-				assert.equal(err,null);
-				console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
-			});
-			res.send({"register":"success"});
+		console.log("\x1b[36mRegister isteği = " + JSON.stringify(req.body) + "\x1b[0m");
+		
+		if(body.username == "" || body.password == "" || body.email == "")
+		{
+			console.log(" *** Hatalı Kullanıcı Bilgileri ***");
+			res.send({"register":"fail"})
+			return;
 		}
+		db.collection(userString).findOne( {$or :[ {username : body.username} , { email : body.email} ] }, function (err,result) {
+		    if (err) {  
+		    	console.log("*** VERİTABANI HATASI **** = " + JSON.stringify(err));
+		    	res.send({"register":"fail"}); }
+
+		    if (result) {
+		        res.send({"register":"fail"});
+		    } else {
+
+				userModel.username = body.username;
+				userModel.password = body.password;
+				userModel.email = body.email;
+
+				db.collection(userString).insertOne(userModel,(err,result)=>{
+					assert.equal(err,null);
+					console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
+				});
+				res.send({"register":"success"});
+			}
+		});
 	});
-});
 
 
 //************************* Yetkilendirme Gereken işlemler! ******************************* //
@@ -151,28 +153,33 @@ router.post('/registerUser',(req,res)=>{
 
 	router.post('/search',authControlMiddleware,(req,res)=>{
 		var search = req.query.q;
-
+		console.log("Arama isteği =  "+ search);
 		var obj =[];
-		obj.push(songs[0]);
-		obj.push(songs[1]);
-		obj.push(songs[2]);
-
-		if(!search)
-		{
-			res.send(JSON.stringify(obj));
-		}
-		else
-		{
-			obj =[];
-			console.log("Arama isteği =  "+ search);
-			for(var i =0 ; i < songs.length ; i++)
+		db.collection(songsString).find({"sarkiismi": {$regex : ".*"+search+".*"} })
+		.limit(10).toArray((err,docs)=>{
+			if(err)
 			{
-
-				if(songs[i].sarkiismi.toUpperCase().includes(search.toUpperCase()))
-					obj.push(songs[i]);
+				console.log(err);
 			}
+			else if(docs)
+			{
+				console.log("Şarkılar ;");
+				for (var i = 0; i < docs.length; i++) {
+					obj.push(docs[i]);
+				}
+
+			console.log(docs);
+			}
+			else
+			{
+				console.log("HatA?");
+				return;
+			}
+
+
 			res.send(JSON.stringify(obj));
-		}
+		});
+
 	});
 
 	router.post('/saveChanges',authControlMiddleware,(req,res)=>{
@@ -275,24 +282,52 @@ router.post('/registerUser',(req,res)=>{
 
 		var obj = [];
 		var rand = 0;
+
+		console.log("Tip isteği = " + req.body.type);
 		switch(req.body.type)
 		{
 			case 0: // en popüler x şarkı 
+
 			rand = Math.floor(Math.random()*7);
 				obj.push(songs[rand]);
 			rand = Math.floor(Math.random()*7);
 				obj.push(songs[rand]);
 			rand = Math.floor(Math.random()*7);
 				obj.push(songs[rand]);
+
+				res.send(JSON.stringify(obj));
+
 			break;
 
 			case 1: // kişiye özel öneri
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
+
+			db.collection(recommendString).find({userid : 1, type: 0}).toArray((err,docs)=>{
+
+				if(err)
+				{
+					console.log("DB hatası! : " + err);
+					return;
+				}
+				
+				var ids = [];
+
+				for (var i = 0; i < docs.length; i++) {
+					ids.push(docs[i].product);
+				}
+
+				db.collection(songsString).find({sarkiId : {$in : ids } }).toArray((err,sngs)=>{
+
+					for (var i = 0; i < sngs.length; i++)
+						obj.push(sngs[i]);
+					
+					res.send(JSON.stringify(obj));
+				});
+
+
+			});
+				
+
+
 			break;
 
 			case 2:  // her türe göre özel öneri ( her türün en sevileni gibi...)
@@ -302,6 +337,8 @@ router.post('/registerUser',(req,res)=>{
 				obj.push(songs[rand]);
 			rand = Math.floor(Math.random()*7);
 				obj.push(songs[rand]);
+
+				res.send(JSON.stringify(obj));
 			break;
 
 			case 3: // ülkeye göre özel öneri
@@ -311,6 +348,8 @@ router.post('/registerUser',(req,res)=>{
 				obj.push(songs[rand]);
 			rand = Math.floor(Math.random()*7);
 				obj.push(songs[rand]);
+
+				res.send(JSON.stringify(obj));
 			break;
 
 			case 4: // yaş gruplarına göre özel öneri
@@ -320,11 +359,13 @@ router.post('/registerUser',(req,res)=>{
 				obj.push(songs[rand]);
 			rand = Math.floor(Math.random()*7);
 				obj.push(songs[rand]);
+
+				res.send(JSON.stringify(obj));
 			break;
 		}
 
-		console.log("göndirelecek mzükler = " + JSON.stringify(obj));
-		res.send(JSON.stringify(obj));
+		console.log("göndirelecek şarkılar = " + JSON.stringify(obj));
+		
 
 
 	});
