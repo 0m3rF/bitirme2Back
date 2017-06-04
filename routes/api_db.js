@@ -381,7 +381,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 							for (var i = 0; i < sngs.length; i++)
 								obj.push(sngs[i]);
 							
-							console.log("kişiye özel gidecke = " + JSON.stringify(obj));
+							console.log("kişiye özel gidecek = " + JSON.stringify(obj) + " \n kişiy özel istek tipi =" +body.type);
 							res.send(JSON.stringify(obj));
 						});
 
