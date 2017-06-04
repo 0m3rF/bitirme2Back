@@ -355,6 +355,8 @@ MongoClient.connect(mongoString,(err,db)=>{
 			
 			request.get(url,
 			    function (error, response, resbody) {
+
+			    	if(resbody != undefined)
 			            if(resbody.includes("ok"))
 			            {
 			            	console.log("cevap geldi ");
