@@ -199,7 +199,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 					obj.push(docs[i]);
 				}
 
-			console.log(docs);
+			
 			}
 			else
 			{
@@ -284,7 +284,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 			 $inc:{ rating : 1, time : 0 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
-			//console.log(result);
+			
 		});
 	});
 
@@ -298,7 +298,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 			$inc:{rating: 0 ,time : 10 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
-			//console.log(result);
+			
 		});
 	});
 
@@ -311,7 +311,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 			$inc:{rating: 0, time : -10 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
-			//console.log(result);
+			
 		});
 	});
 
@@ -326,7 +326,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 		{
 			case 0: // en popüler x şarkı 
 
-
+			console.log("atılan istek = \n" + sparkApiUrl + '/playlistRecommendation?type=0&userid='+body.userid+'&ulkeid=1&yas=20');
 
 			request.get(
 			    sparkApiUrl + '/playlistRecommendation?type=0&userid='+body.userid+'&ulkeid=1&yas=20',
@@ -363,8 +363,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 			            {
 			            	console.log("cevap geldi ");
 						db.collection(recommendString).find({userid : body.userid, type: body.type}).toArray((err,docs)=>{
-							console.log("bulunan şarkılar : ")
-							console.log(docs);
+							
 						if(err)
 						{
 							console.log("DB hatası! : " + err);
@@ -392,8 +391,8 @@ MongoClient.connect(mongoString,(err,db)=>{
 			        else
 			        	 {
 			        	 	console.log("resbody = " + resbody);
-			        	 	console.log("body = " + JSON.stringify(body));
-			        	 	console.log("deneme ")
+			        	 	
+			        	 	console.log("istek tipi=  " + body.type);
 			        	 }
 			    }
 
