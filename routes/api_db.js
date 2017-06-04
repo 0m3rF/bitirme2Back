@@ -10,14 +10,13 @@ var express 	= require('express'),
 	userString 	= config.userCollection,
 	histString 	= config.historyCollection,
 	songsString = config.songsCollection,
-	recommendString = config.recommendCollection;
+	recommendString = config.recommendCollection,
+	sparkApiUrl = "http://78.167.253.212:5000";
 const secret = "bubirgizlianahtardıroldukcauzunolmasıbizimicinonemlidirsonradegistiririz";
 
 var request = require('request'),
     jsdom = require('jsdom');
-
 const { JSDOM } = jsdom;
-
 
 MongoClient.connect(mongoString,(err,db)=>{
 
@@ -52,6 +51,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 				docs = docs[0];
 				var info = { 
 					_id : docs._id,
+					userid : docs.userid,
 					username:docs.username,
 					email:docs.email,
 					age : docs.age,
@@ -73,10 +73,11 @@ MongoClient.connect(mongoString,(err,db)=>{
 	router.post('/registerUser',(req,res)=>{
 
 		var body = req.body;
+		userModel = require("../models/user.js");
 
 		console.log("\x1b[36mRegister isteği = " + JSON.stringify(req.body) + "\x1b[0m");
 		
-		if(body.username == "" || body.password == "" || body.email == "")
+		if( !body.username  || !body.password || !body.email )
 		{
 			console.log(" *** Hatalı Kullanıcı Bilgileri ***");
 			res.send({"register":"fail"})
@@ -85,24 +86,53 @@ MongoClient.connect(mongoString,(err,db)=>{
 		db.collection(userString).findOne( {$or :[ {username : body.username} , { email : body.email} ] }, function (err,result) {
 		    if (err) {  
 		    	console.log("*** VERİTABANI HATASI **** = " + JSON.stringify(err));
-		    	res.send({"register":"fail"}); }
-
+		    	res.send({"register":"fail"}); 
+		    	return;
+		    }
 		    if (result) {
 		        res.send({"register":"fail"});
-		    } else {
+		    } 
+		    else {
+		    	db.collection(userString).find({}).sort({userid:-1}).limit(1).toArray((err,docs)=>{
+		    		if(err)
+		    		{
+		    			console.log("Hata oluştu!");
+		    			return;
+		    		}
 
-				userModel.username = body.username;
-				userModel.password = body.password;
-				userModel.email = body.email;
+		    		userModel._id = new mongo.ObjectID();
+		    		userModel.username = body.username;
+					userModel.password = body.password;
+					userModel.email = body.email;
 
-				db.collection(userString).insertOne(userModel,(err,result)=>{
-					assert.equal(err,null);
-					console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
-				});
-				res.send({"register":"success"});
+					console.log("_id = " + userModel._id);
+		    		if(docs)
+		    		{
+		    			userModel.userid = docs[0].userid+1;
+		    		}
+		    		else
+		    		{
+						userModel.userid = 26000;
+		    		}
+		    		
+		    		db.collection(userString).insertOne(userModel,(err,result)=>{
+		    			if(err)
+		    			{
+		    				console.log("hata = " + err)
+		    				res.send({"register":"fail"});
+		    				return;
+		    			}
+						console.log("Register isteği başarılı !Kaydedilen veri = " +  JSON.stringify(userModel)  );
+						res.send({"register":"success"});
+					});
+
+		    	});
+
+		    	
 			}
 		});
 	});
+
 
 
 //************************* Yetkilendirme Gereken işlemler! ******************************* //
@@ -163,7 +193,8 @@ MongoClient.connect(mongoString,(err,db)=>{
 			}
 			else if(docs)
 			{
-				console.log("Şarkılar ;");
+				
+
 				for (var i = 0; i < docs.length; i++) {
 					obj.push(docs[i]);
 				}
@@ -248,7 +279,9 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var body = req.body;
 
 		console.log(" history count  body = " + JSON.stringify(body));
-		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId}, $inc:{ count : 1, time : 0 } },{upsert:true},(err,result)=>{
+		db.collection(histString).updateOne( { userid : body.userid, songid : body.songId },
+			{ $set: {userid : body.userid, songid : body.songId, genreID : body.genreId},
+			 $inc:{ rating : 1, time : 0 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
 			//console.log(result);
@@ -259,7 +292,10 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var body = req.body;
 
 		console.log(" history time  body = " + JSON.stringify(body));
-		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId},$inc:{count: 0 ,time : 10 } },{upsert:true},(err,result)=>{
+		db.collection(histString).updateOne( 
+			{ userid : body.userid, songid : body.songId },
+			{ $set: {userid : body.userid, songid : body.songId, genreID : body.genreId},
+			$inc:{rating: 0 ,time : 10 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
 			//console.log(result);
@@ -270,7 +306,9 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var body = req.body;
 
 		console.log(" hisotry -time body = " + JSON.stringify(body));
-		db.collection(histString).updateOne( { userId : body.id, songId : body.songId },{ $set: {userId : body.id, songId : body.songId, genreId : body.genreId},$inc:{count: 0, time : -10 } },{upsert:true},(err,result)=>{
+		db.collection(histString).updateOne( { userid : body.userid, songid : body.songId },
+			{ $set: {userid : body.userid, songid : body.songId, genreID : body.genreId},
+			$inc:{rating: 0, time : -10 } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
 			//console.log(result);
@@ -283,89 +321,81 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var obj = [];
 		var rand = 0;
 
-		console.log("Tip isteği = " + req.body.type);
-		switch(req.body.type)
+		console.log("Tip isteği = " + body.type);
+		switch(body.type)
 		{
 			case 0: // en popüler x şarkı 
 
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
 
-				res.send(JSON.stringify(obj));
+
+			request.get(
+			    sparkApiUrl + '/playlistRecommendation?type=0&userid='+body.userid+'&ulkeid=1&yas=20',
+			    function (error, response, body) {
+			            if(body == "ok")
+			            {
+			            	console.log("Kayıt başarılı!");
+			            	console.log(response);
+			            	res.send(JSON.stringify(obj));
+			            }
+			    }
+
+			);
+
+				
 
 			break;
 
 			case 1: // kişiye özel öneri
+			case 2:
+			case 3:
+			case 4:
+			var url =  sparkApiUrl + '/playlistRecommendation?type='+body.type + '&userid=' +body.userid + "&ulkeid=" + body.country + "&yas=" + body.age;
 
-			db.collection(recommendString).find({userid : 1, type: 0}).toArray((err,docs)=>{
+			console.log("atılan istek = \n" + url);
+			
+			request.get(url,
+			    function (error, response, resbody) {
+			            if(resbody.includes("ok"))
+			            {
+			            	console.log("cevap geldi ");
+						db.collection(recommendString).find({userid : body.userid, type: body.type}).toArray((err,docs)=>{
+							console.log("bulunan şarkılar : ")
+							console.log(docs);
+						if(err)
+						{
+							console.log("DB hatası! : " + err);
+							return;
+						}
+						
+						var ids = [];
 
-				if(err)
-				{
-					console.log("DB hatası! : " + err);
-					return;
-				}
-				
-				var ids = [];
+						for (var i = 0; i < docs.length; i++) {
+							ids.push(docs[i].product);
+						}
 
-				for (var i = 0; i < docs.length; i++) {
-					ids.push(docs[i].product);
-				}
+						db.collection(songsString).find({sarkiId : {$in : ids } }).toArray((err,sngs)=>{
 
-				db.collection(songsString).find({sarkiId : {$in : ids } }).toArray((err,sngs)=>{
+							for (var i = 0; i < sngs.length; i++)
+								obj.push(sngs[i]);
+							
+							console.log("kişiye özel gidecke = " + JSON.stringify(obj));
+							res.send(JSON.stringify(obj));
+						});
 
-					for (var i = 0; i < sngs.length; i++)
-						obj.push(sngs[i]);
-					
-					res.send(JSON.stringify(obj));
-				});
+					});
 
+			        }
+			        else
+			        	 {
+			        	 	console.log("resbody = " + resbody);
+			        	 	console.log("body = " + JSON.stringify(body));
+			        	 	console.log("deneme ")
+			        	 }
+			    }
 
-			});
-				
-
-
-			break;
-
-			case 2:  // her türe göre özel öneri ( her türün en sevileni gibi...)
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-
-				res.send(JSON.stringify(obj));
-			break;
-
-			case 3: // ülkeye göre özel öneri
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-
-				res.send(JSON.stringify(obj));
-			break;
-
-			case 4: // yaş gruplarına göre özel öneri
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-			rand = Math.floor(Math.random()*7);
-				obj.push(songs[rand]);
-
-				res.send(JSON.stringify(obj));
+			);
 			break;
 		}
-
-		console.log("göndirelecek şarkılar = " + JSON.stringify(obj));
-		
 
 
 	});
