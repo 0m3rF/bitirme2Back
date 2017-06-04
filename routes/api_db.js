@@ -376,7 +376,7 @@ MongoClient.connect(mongoString,(err,db)=>{
 							ids.push(docs[i].product);
 						}
 
-						db.collection(songsString).find({sarkiId : {$in : ids } }).toArray((err,sngs)=>{
+						db.collection(songsString).find({sarkiId : {$in : ids } }).sort({$natural: -1}).limit(5).toArray((err,sngs)=>{
 
 							for (var i = 0; i < sngs.length; i++)
 								obj.push(sngs[i]);
