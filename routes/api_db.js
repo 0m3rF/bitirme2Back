@@ -330,11 +330,13 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 			request.get(
 			    sparkApiUrl + '/playlistRecommendation?type=0&userid='+body.userid+'&ulkeid=1&yas=20',
-			    function (error, response, body) {
-			            if(body == "ok")
+			    function (error, response, resbody) {
+			            if(resbody != undefined)
+			            if(resbody.includes("ok"))
 			            {
-			            	console.log("Kayıt başarılı!");
+			            	console.log("Type 0 response = ");
 			            	console.log(response);
+			            	
 			            	res.send(JSON.stringify(obj));
 			            }
 			    }
