@@ -34,7 +34,7 @@ app.post('/api',(req,res)=>{ // this will handle coming post request to xyz.com/
 
 
 
-app.listen(port, () => console.log("App started to listen port = " + port ) );// start server
+var server = app.listen(port, () => console.log("App started to listen port = " + port ) );// start server
 
-
+server.timeout = 100000;
 
