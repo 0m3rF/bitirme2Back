@@ -18,6 +18,17 @@ var request = require('request'),
     jsdom = require('jsdom');
 const { JSDOM } = jsdom;
 
+
+var popularSongs = ['{"product":99876,"type":0}', '{"product":34597,"type":0}', '{"product":416729,"type":0}', '{"product":316131,"type":0}', '{"product":346529,"type":0}',
+ '{"product":369911,"type":0}', '{"product":410266,"type":0}', '{"product":261687,"type":0}', '{"product":364060,"type":0}', '{"product":4826,"type":0}', 
+ '{"product":39697,"type":0}', '{"product":96704,"type":0}', '{"product":10517,"type":0}', '{"product":206878,"type":0}', '{"product":14945,"type":0}', 
+'{"product":106605,"type":0}', '{"product":3507,"type":0}', '{"product":316131,"type":0}', '{"product":336366,"type":0}', '{"product":27803,"type":0}']
+
+
+for (var i = 0; i < popularSongs.length; i++) {
+	popularSongs[i] = JSON.parse(popularSongs[i]);
+}
+
 MongoClient.connect(mongoString,(err,db)=>{
 
 	assert.equal(null,err);
@@ -279,9 +290,9 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var body = req.body;
 
 		console.log(" history count  body = " + JSON.stringify(body));
-		db.collection(histString).updateOne( { userid : body.userid, songid : body.songId },
-			{ $set: {userid : body.userid, songid : body.songId, genreID : body.genreId},
-			 $inc:{ rating : 1, time : 0 } },{upsert:true},(err,result)=>{
+		db.collection(histString).updateOne( { userid : Long(body.userid), songid : Long(body.songId )},
+			{ $set: {userid : Long(body.userid), songid : Long(body.songId), genreID : Long(body.genreId)},
+			 $inc:{ rating : Double(1), time : Long(0) } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
 			
@@ -328,22 +339,19 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 			console.log("atılan istek = \n" + sparkApiUrl + '/playlistRecommendation?type=0&userid='+body.userid+'&ulkeid=1&yas=20');
 
-			request.get(
-			    sparkApiUrl + '/playlistRecommendation?type=0&userid='+body.userid+'&ulkeid=1&yas=20',
-			    function (error, response, resbody) {
-			            if(resbody != undefined)
-			            if(resbody.includes("ok"))
-			            {
-			            	console.log("Type 0 response = ");
-			            	console.log(response);
-			            	
-			            	res.send(JSON.stringify(obj));
-			            }
-			    }
+			var ids = [];
+				for (var i = 0; i < popularSongs.length; i++) {
+					ids.push(popularSongs[i].product);
+				}
 
-			);
+				db.collection(songsString).find({sarkiId : {$in : ids } }).sort({$natural: -1}).limit(10).toArray((err,sngs)=>{
 
-				
+							for (var i = 0; i < sngs.length; i++)
+								obj.push(sngs[i]);
+							
+							res.send(JSON.stringify(obj));
+						});
+
 
 			break;
 
@@ -358,7 +366,10 @@ MongoClient.connect(mongoString,(err,db)=>{
 			request.get(url,
 			    function (error, response, resbody) {
 
+
+
 			    	if(resbody != undefined)
+			    	{
 			            if(resbody.includes("ok"))
 			            {
 			            	console.log("cevap geldi ");
@@ -381,19 +392,19 @@ MongoClient.connect(mongoString,(err,db)=>{
 							for (var i = 0; i < sngs.length; i++)
 								obj.push(sngs[i]);
 							
-							console.log("kişiye özel gidecek = " + JSON.stringify(obj) + " \n kişiy özel istek tipi =" +body.type);
 							res.send(JSON.stringify(obj));
 						});
 
-					});
+						});
 
-			        }
-			        else
-			        	 {
-			        	 	console.log("resbody = " + resbody);
-			        	 	
-			        	 	console.log("istek tipi=  " + body.type);
-			        	 }
+				        }
+				        else
+				        	 {
+				        	 	console.log("resbody = " + resbody);
+				        	 	console.log("istek tipi=  " + body.type);
+				        	 }
+			    }
+			        
 			    }
 
 			);
@@ -423,3 +434,4 @@ MongoClient.connect(mongoString,(err,db)=>{
 
 
 module.exports = router;
+
