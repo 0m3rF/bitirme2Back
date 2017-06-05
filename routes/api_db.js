@@ -305,8 +305,8 @@ MongoClient.connect(mongoString,(err,db)=>{
 		console.log(" history time  body = " + JSON.stringify(body));
 		db.collection(histString).updateOne( 
 			{ userid : body.userid, songid : body.songId },
-			{ $set: {userid : body.userid, songid : body.songId, genreID : body.genreId},
-			$inc:{rating: 0 ,time : 10 } },{upsert:true},(err,result)=>{
+			{ $set: {userid : Long(body.userid), songid : Long(body.songId), genreID : Long(body.genreId)},
+			$inc:{rating: Double(0) ,time : Long(10) } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
 			
@@ -317,9 +317,9 @@ MongoClient.connect(mongoString,(err,db)=>{
 		var body = req.body;
 
 		console.log(" hisotry -time body = " + JSON.stringify(body));
-		db.collection(histString).updateOne( { userid : body.userid, songid : body.songId },
-			{ $set: {userid : body.userid, songid : body.songId, genreID : body.genreId},
-			$inc:{rating: 0, time : -10 } },{upsert:true},(err,result)=>{
+		db.collection(histString).updateOne( { userid : Long(body.userid), songid : Long(body.songId) },
+			{ $set: {userid : Long( body.userid), songid : Long(body.songId), genreID : Long(body.genreId)},
+			$inc:{rating: Double(0), time : Long(-10) } },{upsert:true},(err,result)=>{
 			res.send({"UPSERT":"SUCCESS"});
 
 			
